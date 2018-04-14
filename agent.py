@@ -3,20 +3,27 @@ from mitmproxy.script import concurrent
 import datetime
 import time
 import sys
+import socket
 
 HOST_NAME = 'ae.bestdo.com'
 
 # GET_VALID_PRICE = 'ajaxGetValidPriceTime'
 
-API_RESERVE = 'https://ae.bestdo.com/mer/item/detail/ajaxGetSth'
-API_SUBMIT = 'http://ae.bestdo.com/orders/swimbod/createOrder'
+API_RESERVE = 'ae.bestdo.com/mer/item/detail/ajaxGetSth'
+API_SUBMIT = 'ae.bestdo.com/orders/swimbod/createOrder'
 
-target_date = "2018-04-17"
+today = datetime.date.today()
+swim_day = today + datetime.timedelta(7)
+swim_day = "%s-%02d-%d" % (swim_day.year, swim_day.month, swim_day.day)
+print(swim_day)
 
-def start():
-    if len(sys.argv) == 2:
-        global target_date
-        target_date = sys.argv[1]
+# swim_day = "2018-04-22"
+
+import socket
+s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+s.connect(("8.8.8.8", 80))
+print(s.getsockname()[0])
+s.close()
 
 def request(flow: http.HTTPFlow) -> None:
     if flow.request.pretty_host != HOST_NAME:
@@ -24,9 +31,9 @@ def request(flow: http.HTTPFlow) -> None:
 
     print(flow.request)
 
-    if flow.request.urlencoded_form:
-        if flow.request.pretty_url in (API_RESERVE, API_SUBMIT):
-            flow.request.urlencoded_form["book_day"] = target_date
+    if flow.request.urlencoded_form and flow.request.method == 'POST':
+        if (API_RESERVE in flow.request.pretty_url) or (API_SUBMIT in flow.request.pretty_url):
+            flow.request.urlencoded_form["book_day"] = swim_day
             flow.request.urlencoded_form["start_hour"] = "7"
             print(flow.request.urlencoded_form)
 
